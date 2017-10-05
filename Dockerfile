@@ -13,8 +13,10 @@ MAINTAINER Alexander Swensen <alex.swensen@gmail.com>
 # Replace shell with bash so we can source files
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
-FROM debian:jessie
-MAINTAINER Jan Suchotzki <jan@suchotzki.de>
+# Install Required Packages
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+    apt-get install -y python-pip build-essential python-dev mysql-server nodejs nginx python-software-properties software-properties-common
+
 
 # first create user and group for all the X Window stuff
 # required to do this first so have consistent uid/gid between server and client container
@@ -42,20 +44,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN mkdir -p /Xauthority && chown -R xuser:xusers /Xauthority
 VOLUME /Xauthority
 
-# start x11vnc and expose its port
-ENV DISPLAY :0.0
-EXPOSE 5900
-COPY docker-entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-# switch to user and start
-
-
-# Install Required Packages
-RUN apt-get update && \
-    apt-get install -y python-pip build-essential python-dev mysql-server nodejs nginx python-software-properties software-properties-common
-
-
 RUN set -xe \
     && apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl socat \
@@ -74,10 +62,6 @@ RUN set -xe \
 #========================================
 # Add normal user with passwordless sudo
 #========================================
-RUN set -xe \
-    && useradd -u 1000 -g 100 -G sudo --shell /bin/bash --no-create-home --home-dir /tmp user \
-    && echo 'ALL ALL = (ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers
-
 
 # install NVM
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.5/install.sh | bash
@@ -121,10 +105,21 @@ RUN pip install virtualenv virtualenvwrapper
 #RUN dpkg -i ./google-chrome*.deb
 #RUN apt-get install -f
 #RUN rm google-chrome*.deb
+
+# create or use the volume depending on how container is run
+# ensure that server and client can access the cookie
+RUN mkdir -p /Xauthority && chown -R xuser:xusers /Xauthority
+VOLUME /Xauthority
+
+# start x11vnc and expose its port
+ENV DISPLAY :0.0
+EXPOSE 5900
+COPY docker-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 USER xuser
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-EXPOSE 80 443 3000 3001 8080
 
-CMD bash
+#CMD bash
