@@ -34,6 +34,14 @@ RUN set -xe \
     && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
+#========================================
+# Add normal user with passwordless sudo
+#========================================
+RUN set -xe \
+    && useradd -u 1000 -g 100 -G sudo --shell /bin/bash --no-create-home --home-dir /tmp user \
+    && echo 'ALL ALL = (ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers
+
+
 # install NVM
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.5/install.sh | bash
 
