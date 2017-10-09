@@ -142,6 +142,9 @@ RUN . ~/.nvm/nvm.sh && \
     nvm install $NODE_VERSION && \
     npm install -g npm@latest
 
+
+RUN echo ". /home/circleci/.nvm/nvm.sh" >> ~/.bashrc
+
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["/bin/sh"]
 
