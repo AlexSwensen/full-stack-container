@@ -15,67 +15,56 @@ RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
 # Install Required Packages
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
-    apt-get install -y python-pip build-essential python-dev mysql-server nodejs nginx python-software-properties software-properties-common
+    apt-get install -y \
+    python-pip build-essential python-dev mysql-server \
+    nginx python-software-properties \
+    software-properties-common
 
-
-# first create user and group for all the X Window stuff
-# required to do this first so have consistent uid/gid between server and client container
-RUN addgroup --system xusers \
-  && adduser \
-			--home /home/xuser \
-			--disabled-password \
-			--shell /bin/bash \
-			--gecos "user for running X Window stuff" \
-			--ingroup xusers \
-			--quiet \
-			xuser
-
-# Install xvfb as X-Server and x11vnc as VNC-Server
-RUN apt-get update && apt-get install -y --no-install-recommends \
-				xvfb \
-				xauth \
-				x11vnc \
-				x11-utils \
-				x11-xserver-utils \
-		&& rm -rf /var/lib/apt/lists/*
-
-# create or use the volume depending on how container is run
-# ensure that server and client can access the cookie
-RUN mkdir -p /Xauthority && chown -R xuser:xusers /Xauthority
-VOLUME /Xauthority
-
-RUN set -xe \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl socat \
-    && apt-get install -y --no-install-recommends xvfb x11vnc fluxbox xterm \
-    && apt-get install -y --no-install-recommends sudo \
-    && apt-get install -y --no-install-recommends supervisor \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN set -xe \
-    && curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+  && apt-get install -y \
+    git mercurial xvfb \
+    locales sudo openssh-client ca-certificates tar gzip parallel \
+    net-tools netcat unzip zip bzip2 \
+    libgtk3.0-cil-dev libasound2 libasound2 libdbus-glib-1-2 libdbus-1-3
 
 #========================================
 # Add normal user with passwordless sudo
 #========================================
 
+RUN groupadd --gid 3434 circleci \
+  && useradd --uid 3434 --gid circleci --shell /bin/bash --create-home circleci \
+  && echo 'circleci ALL=NOPASSWD: ALL' >> /etc/sudoers.d/50-circleci \
+  && echo 'Defaults    env_keep += "DEBIAN_FRONTEND"' >> /etc/sudoers.d/env_keep
+
+
+USER circleci
+
+ENV HOME "/home/circleci"
+
+# install java 8
+#
+RUN if grep -q Debian /etc/os-release && grep -q jessie /etc/os-release; then \
+    echo "deb http://http.us.debian.org/debian/ jessie-backports main" | sudo tee -a /etc/apt/sources.list \
+    && echo "deb-src http://http.us.debian.org/debian/ jessie-backports main" | sudo tee -a /etc/apt/sources.list \
+    && sudo apt-get update; sudo apt-get install -y -t jessie-backports openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk openjdk-8-jdk-headless \
+  ; else \
+    sudo apt-get update; sudo apt-get install -y openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk openjdk-8-jdk-headless \
+  ; fi
+
 # install NVM
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.5/install.sh | bash
-
+ENV NVM_DIR "$HOME/.nvm"
 ENV NODE_VERSION 6.11.1
 
 # Install a version of node & latest npm
-RUN source /root/.bashrc && \
-    cd /root && \
+RUN source ~/.bashrc && \
+    . ~/.nvm/nvm.sh && \
+    cd ~ && \
     nvm install $NODE_VERSION && \
     npm install -g npm@latest
 
 # Install latest npm
-RUN npm install -g npm@latest
+#RUN npm install -g npm@latest
 
 # Install Redis from source
 ENV REDIS_VERSION 4.0.2
@@ -84,20 +73,80 @@ ENV REDIS_DOWNLOAD_SHA1 d2588569a35531fcdf03ff05cf0e16e381bc278f
 
 RUN buildDeps='gcc libc6-dev make' \
     && set -x \
-    && apt-get update && apt-get install -y $buildDeps --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/* \
-    && wget -O redis.tar.gz "$REDIS_DOWNLOAD_URL" \
+    && sudo apt-get update && sudo apt-get install -y $buildDeps --no-install-recommends \
+    && sudo rm -rf /var/lib/apt/lists/* \
+    && sudo wget -O redis.tar.gz "$REDIS_DOWNLOAD_URL" \
     && echo "$REDIS_DOWNLOAD_SHA1 *redis.tar.gz" | sha1sum -c - \
-    && mkdir -p /usr/src/redis \
-    && tar -xzf redis.tar.gz -C /usr/src/redis --strip-components=1 \
-    && rm redis.tar.gz \
-    && make -C /usr/src/redis \
-    && make -C /usr/src/redis install \
-    && rm -r /usr/src/redis
+    && sudo mkdir -p /usr/src/redis \
+    && sudo tar -xzf redis.tar.gz -C /usr/src/redis --strip-components=1 \
+    && sudo rm redis.tar.gz \
+    && sudo make -C /usr/src/redis \
+    && sudo make -C /usr/src/redis install \
+    && sudo rm -r /usr/src/redis
 
 # VIRTUALENV - Set up virtualenv and virtualenvwrapper, can use whichever you prefer
-RUN pip install virtualenv virtualenvwrapper
+RUN sudo pip install virtualenv virtualenvwrapper
 
+
+# install chrome
+
+RUN sudo apt-get update && sudo apt-get install -y \
+    ca-certificates \
+    fonts-cantarell \
+    fonts-droid \
+    fonts-liberation \
+    fonts-roboto \
+    gconf-service \
+    hicolor-icon-theme \
+    libappindicator1 \
+    libasound2 \
+    libcanberra-gtk-module \
+    libcurl3 \
+    libexif-dev \
+    libfontconfig1 \
+    libfreetype6 \
+    libgconf-2-4 \
+    libgl1-mesa-dri \
+    libgl1-mesa-glx \
+    libnspr4 \
+    libnss3 \
+    libpango1.0-0 \
+    libv4l-0 \
+    libxss1 \
+    libxtst6 \
+    lsb-base \
+    strace \
+    wget \
+    xdg-utils \
+    --no-install-recommends
+
+RUN curl --silent --show-error --location --fail --retry 3 --output /tmp/google-chrome-stable_current_amd64.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+      && (sudo dpkg -i /tmp/google-chrome-stable_current_amd64.deb || sudo apt-get -fy install)  \
+      && rm -rf /tmp/google-chrome-stable_current_amd64.deb \
+      && sudo sed -i 's|HERE/chrome"|HERE/chrome" --disable-setuid-sandbox --no-sandbox|g' \
+           "/opt/google/chrome/google-chrome" \
+      && google-chrome --version
+
+RUN export CHROMEDRIVER_RELEASE=$(curl --location --fail --retry 3 http://chromedriver.storage.googleapis.com/LATEST_RELEASE) \
+      && curl --silent --show-error --location --fail --retry 3 --output /tmp/chromedriver_linux64.zip "http://chromedriver.storage.googleapis.com/$CHROMEDRIVER_RELEASE/chromedriver_linux64.zip" \
+      && cd /tmp \
+      && unzip chromedriver_linux64.zip \
+      && rm -rf chromedriver_linux64.zip \
+      && sudo mv chromedriver /usr/local/bin/chromedriver \
+      && sudo chmod +x /usr/local/bin/chromedriver \
+      && chromedriver --version
+
+# start xvfb automatically to avoid needing to express in circle.yml
+ENV DISPLAY :99
+RUN printf '#!/bin/sh\nXvfb :99 -screen 0 1280x1024x24 &\nexec "$@"\n' > /tmp/entrypoint \
+	&& chmod +x /tmp/entrypoint \
+        && sudo mv /tmp/entrypoint /docker-entrypoint.sh
+
+# ensure that the build agent doesn't override the entrypoint
+LABEL com.circleci.preserve-entrypoint=true
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["/bin/sh"]
 
 # Install Google Chrome
 #RUN apt-get update && apt-get install -y gconf-service libasound2 libatk1.0-0 libcups2 libgconf-2-4 libgtk-3-0 libnspr4 libx11-xcb1 libxcomposite1 fonts-liberation libappindicator1 libnss3 xdg-utils
@@ -106,20 +155,6 @@ RUN pip install virtualenv virtualenvwrapper
 #RUN apt-get install -f
 #RUN rm google-chrome*.deb
 
-# create or use the volume depending on how container is run
-# ensure that server and client can access the cookie
-RUN mkdir -p /Xauthority && chown -R xuser:xusers /Xauthority
-VOLUME /Xauthority
-
-# start x11vnc and expose its port
-ENV DISPLAY :0.0
-EXPOSE 5900
-COPY docker-entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-USER xuser
-
-ENTRYPOINT ["/entrypoint.sh"]
 
 
-#CMD bash
+CMD bash
