@@ -142,6 +142,8 @@ RUN . ~/.nvm/nvm.sh && \
     nvm install $NODE_VERSION && \
     npm install -g npm@latest
 
+ADD .bash_profile /home/circleci/.bash_profile
+
 
 RUN echo ". /home/circleci/.nvm/nvm.sh" >> ~/.bashrc
 
