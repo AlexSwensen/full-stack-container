@@ -10,9 +10,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 MAINTAINER Alexander Swensen <alex.swensen@gmail.com>
 
-# Replace shell with bash so we can source files
-RUN rm /bin/sh && ln -s /bin/bash /bin/sh
-
 # Install Required Packages
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     apt-get install -y \
@@ -140,8 +137,7 @@ ENV NVM_DIR "$HOME/.nvm"
 ENV NODE_VERSION 6.11.1
 
 # Install a version of node & latest npm
-RUN source ~/.bashrc && \
-    . ~/.nvm/nvm.sh && \
+RUN . ~/.nvm/nvm.sh && \
     cd ~ && \
     nvm install $NODE_VERSION && \
     npm install -g npm@latest
