@@ -36,33 +36,6 @@ RUN groupadd --gid 3434 circleci \
   && echo 'circleci ALL=NOPASSWD: ALL' >> /etc/sudoers.d/50-circleci \
   && echo 'Defaults    env_keep += "DEBIAN_FRONTEND"' >> /etc/sudoers.d/env_keep
 
-
-USER circleci
-
-ENV HOME "/home/circleci"
-
-# install java 8
-#
-RUN if grep -q Debian /etc/os-release && grep -q jessie /etc/os-release; then \
-    echo "deb http://http.us.debian.org/debian/ jessie-backports main" | sudo tee -a /etc/apt/sources.list \
-    && echo "deb-src http://http.us.debian.org/debian/ jessie-backports main" | sudo tee -a /etc/apt/sources.list \
-    && sudo apt-get update; sudo apt-get install -y -t jessie-backports openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk openjdk-8-jdk-headless \
-  ; else \
-    sudo apt-get update; sudo apt-get install -y openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk openjdk-8-jdk-headless \
-  ; fi
-
-# install NVM
-RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.5/install.sh | bash
-ENV NVM_DIR "$HOME/.nvm"
-ENV NODE_VERSION 6.11.1
-
-# Install a version of node & latest npm
-RUN source ~/.bashrc && \
-    . ~/.nvm/nvm.sh && \
-    cd ~ && \
-    nvm install $NODE_VERSION && \
-    npm install -g npm@latest
-
 # Install latest npm
 #RUN npm install -g npm@latest
 
@@ -73,20 +46,34 @@ ENV REDIS_DOWNLOAD_SHA1 d2588569a35531fcdf03ff05cf0e16e381bc278f
 
 RUN buildDeps='gcc libc6-dev make' \
     && set -x \
-    && sudo apt-get update && sudo apt-get install -y $buildDeps --no-install-recommends \
-    && sudo rm -rf /var/lib/apt/lists/* \
-    && sudo wget -O redis.tar.gz "$REDIS_DOWNLOAD_URL" \
+    && apt-get update &&  apt-get install -y $buildDeps --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/* \
+    && wget -O redis.tar.gz "$REDIS_DOWNLOAD_URL" \
     && echo "$REDIS_DOWNLOAD_SHA1 *redis.tar.gz" | sha1sum -c - \
-    && sudo mkdir -p /usr/src/redis \
-    && sudo tar -xzf redis.tar.gz -C /usr/src/redis --strip-components=1 \
-    && sudo rm redis.tar.gz \
-    && sudo make -C /usr/src/redis \
-    && sudo make -C /usr/src/redis install \
-    && sudo rm -r /usr/src/redis
+    && mkdir -p /usr/src/redis \
+    && tar -xzf redis.tar.gz -C /usr/src/redis --strip-components=1 \
+    && rm redis.tar.gz \
+    && make -C /usr/src/redis \
+    && make -C /usr/src/redis install \
+    && rm -r /usr/src/redis
+
+
+
+USER circleci
 
 # VIRTUALENV - Set up virtualenv and virtualenvwrapper, can use whichever you prefer
 RUN sudo pip install virtualenv virtualenvwrapper
 
+
+# install java 8
+#
+RUN if grep -q Debian /etc/os-release && grep -q jessie /etc/os-release; then \
+    echo "deb http://http.us.debian.org/debian/ jessie-backports main" | sudo tee -a /etc/apt/sources.list \
+    && echo "deb-src http://http.us.debian.org/debian/ jessie-backports main" | sudo tee -a /etc/apt/sources.list \
+    && sudo apt-get update; sudo apt-get install -y -t jessie-backports openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk openjdk-8-jdk-headless \
+  ; else \
+    sudo apt-get update; sudo apt-get install -y openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk openjdk-8-jdk-headless \
+  ; fi
 
 # install chrome
 
@@ -144,6 +131,20 @@ RUN printf '#!/bin/sh\nXvfb :99 -screen 0 1280x1024x24 &\nexec "$@"\n' > /tmp/en
 
 # ensure that the build agent doesn't override the entrypoint
 LABEL com.circleci.preserve-entrypoint=true
+
+ENV HOME "/home/circleci"
+
+# install NVM
+RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.5/install.sh | bash
+ENV NVM_DIR "$HOME/.nvm"
+ENV NODE_VERSION 6.11.1
+
+# Install a version of node & latest npm
+RUN source ~/.bashrc && \
+    . ~/.nvm/nvm.sh && \
+    cd ~ && \
+    nvm install $NODE_VERSION && \
+    npm install -g npm@latest
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["/bin/sh"]
