@@ -1,5 +1,3 @@
-source /home/circleci/.bashrc
-
 export MY_CUSTOM_ENV=true
 
 # Source nvm

@@ -142,10 +142,8 @@ RUN . ~/.nvm/nvm.sh && \
     nvm install $NODE_VERSION && \
     npm install -g npm@latest
 
+# Add a custom .bash_profile since circleci refuses to load .bashrc
 ADD .bash_profile /home/circleci/.bash_profile
-
-
-RUN echo ". /home/circleci/.nvm/nvm.sh" >> ~/.bashrc
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["/bin/sh"]
