@@ -155,7 +155,3 @@ CMD ["/bin/sh"]
 #RUN dpkg -i ./google-chrome*.deb
 #RUN apt-get install -f
 #RUN rm google-chrome*.deb
-
-
-
-CMD bash
