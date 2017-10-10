@@ -23,7 +23,10 @@ RUN apt-get update \
     locales sudo openssh-client ca-certificates tar gzip parallel \
     net-tools netcat unzip zip bzip2 \
     libgtk3.0-cil-dev libasound2 libasound2 libdbus-glib-1-2 libdbus-1-3 \
-    lcov
+    lcov ruby
+
+
+RUN gem install coveralls-lcov
 
 #========================================
 # Add normal user with passwordless sudo
@@ -150,6 +153,7 @@ RUN . ~/.nvm/nvm.sh && \
     cd ~ && \
     nvm install $NODE_VERSION && \
     npm install -g npm@latest && \
+    npm install -g coveralls && \
     npm install
 
 RUN echo ". /usr/local/bin/virtualenvwrapper.sh && mkvirtualenv -p python3 circle && pip install virtualenv virtualenvwrapper" | bash
