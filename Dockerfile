@@ -160,8 +160,11 @@ ADD .bash_profile /home/circleci/.bash_profile
 RUN cat /home/circleci/.bash_profile >> /home/circleci/.profile
 RUN cat /home/circleci/.bash_profile >> /home/circleci/.bashrc
 
+# Own .bashrc file
+RUN sudo chown circleci:circleci /home/circleci/.bashrc
+
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["/bin/sh"]
+CMD ["/bin/bash"]
 
 # Install Google Chrome
 #RUN apt-get update && apt-get install -y gconf-service libasound2 libatk1.0-0 libcups2 libgconf-2-4 libgtk-3-0 libnspr4 libx11-xcb1 libxcomposite1 fonts-liberation libappindicator1 libnss3 xdg-utils
