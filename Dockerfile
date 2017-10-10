@@ -156,6 +156,10 @@ RUN echo ". /usr/local/bin/virtualenvwrapper.sh && mkvirtualenv -p python3 circl
 # Add a custom .bash_profile since circleci refuses to load .bashrc
 ADD .bash_profile /home/circleci/.bash_profile
 
+# copy to other two paths just in case
+RUN cat /home/circleci/.bash_profile >> /home/circleci/.profile
+RUN cat /home/circleci/.bash_profile >> /home/circleci/.bashrc
+
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["/bin/sh"]
 
