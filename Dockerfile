@@ -22,7 +22,8 @@ RUN apt-get update \
     git mercurial xvfb \
     locales sudo openssh-client ca-certificates tar gzip parallel \
     net-tools netcat unzip zip bzip2 \
-    libgtk3.0-cil-dev libasound2 libasound2 libdbus-glib-1-2 libdbus-1-3
+    libgtk3.0-cil-dev libasound2 libasound2 libdbus-glib-1-2 libdbus-1-3 \
+    lcov
 
 #========================================
 # Add normal user with passwordless sudo
@@ -71,6 +72,13 @@ RUN if grep -q Debian /etc/os-release && grep -q jessie /etc/os-release; then \
   ; else \
     sudo apt-get update; sudo apt-get install -y openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk openjdk-8-jdk-headless \
   ; fi
+
+
+RUN wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+RUN sudo apt-get install apt-transport-https
+RUN echo "deb https://artifacts.elastic.co/packages/5.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-5.x.list
+RUN sudo apt-get update && sudo apt-get install elasticsearch
+RUN sudo update-rc.d elasticsearch defaults 95 10
 
 # install chrome
 
@@ -140,7 +148,8 @@ ENV NODE_VERSION 6.11.1
 RUN . ~/.nvm/nvm.sh && \
     cd ~ && \
     nvm install $NODE_VERSION && \
-    npm install -g npm@latest
+    npm install -g npm@latest && \
+    npm install
 
 RUN echo ". /usr/local/bin/virtualenvwrapper.sh && mkvirtualenv -p python3 circle" | bash
 
