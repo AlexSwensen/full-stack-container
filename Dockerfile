@@ -151,7 +151,7 @@ RUN . ~/.nvm/nvm.sh && \
     npm install -g npm@latest && \
     npm install
 
-RUN echo ". /usr/local/bin/virtualenvwrapper.sh && mkvirtualenv -p python3 circle" | bash
+RUN echo ". /usr/local/bin/virtualenvwrapper.sh && mkvirtualenv -p python3 circle && pip install virtualenv virtualenvwrapper" | bash
 
 # Add a custom .bash_profile since circleci refuses to load .bashrc
 ADD .bash_profile /home/circleci/.bash_profile
