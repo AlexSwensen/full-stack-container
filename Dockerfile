@@ -79,6 +79,7 @@ RUN sudo apt-get install apt-transport-https
 RUN echo "deb https://artifacts.elastic.co/packages/5.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-5.x.list
 RUN sudo apt-get update && sudo apt-get install elasticsearch
 RUN sudo update-rc.d elasticsearch defaults 95 10
+RUN sudo update-rc.d mysql defaults
 
 # install chrome
 
