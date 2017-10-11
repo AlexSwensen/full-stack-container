@@ -6,4 +6,4 @@ Comes with chrome working, and many common tools.
 - nginx
 - Redis
 - MySQL 
--Elasticsearch
+- Elasticsearch
