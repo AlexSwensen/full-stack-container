@@ -1,2 +1,2 @@
-# nginx-python3-node-chrome-mysql-redis-container
-A docker container to do all the things...
+# full-stack-container
+Comes with chrome working, and many common tools for python, node, ruby, nginx, redis, mysql and elasticsearch preinstalled.
